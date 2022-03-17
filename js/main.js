@@ -195,11 +195,12 @@ var main = function() {
       var ret = game.getMousePos(event)
       game.cursor_x = parseInt(ret['x'] / (canvas.clientWidth / cols))
       game.cursor_y = parseInt(ret['y'] / (canvas.clientHeight / rows))
-      // log(game.cursor_x + " " + game.cursor_y + canvas.offsetWidth)
+      // log(game.cursor_x + " " + game.cursor_y + " ")
       // log(ret['x'] + " " + ret['y'])
     });
 
     game.updateInfo = function() {
+      // log(barriers)
       game.curr_side = barriers.length % 2
       // log(barriers)
       info = $("#info")
@@ -209,7 +210,7 @@ var main = function() {
       if (game.curr_side == WHITE_SIDE) {
         if (game.get_legal_moves(white1).size == 0 && game.get_legal_moves(white2).size == 0) {
           //white lose
-          curr += `${black} win!`
+          curr += `${black} Wins!`
         } else {
           curr += `${white}'s turn.`
         }
@@ -235,6 +236,7 @@ var main = function() {
   });
   main.restLevel = function() {
     game.end();
+    $('#viewer').replaceWith($('#viewer').clone());
     main();
   }
   main.addSize = function() {
