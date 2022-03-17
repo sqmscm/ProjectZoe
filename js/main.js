@@ -44,9 +44,11 @@ var main = function() {
     game.cursor_x = 0
     game.cursor_y = 0
     game.curr_side = 0
+    game.active_traceback = null
     game.is_placing_piece = true
     game.last_moved_piece = null
     game.last_placed_barrier = null
+    game.latest_states = {}
 
     game.move = function(piece, location) {
       x = location[0]
@@ -64,6 +66,16 @@ var main = function() {
       piece.board_x = x
       piece.board_y = y
       // log(states)
+    }
+
+    //place without other judges on properties
+    game.place = function(piece, location) {
+      x = location[0]
+      y = location[1]
+      piece.x = x * cell_width
+      piece.y = y * cell_height
+      piece.board_x = x
+      piece.board_y = y
     }
 
     game.getState = function(x, y) {
@@ -146,6 +158,37 @@ var main = function() {
       game.updateInfo()
     }
 
+    // restore a state
+    game.restore = function(trace_state) {
+      w1_drawed = false
+      b1_drawed = false
+      barrier_idx = 0
+      for (var i = 0; i < rows; i++) {
+        for (var j = 0; j < cols; j++) {
+          cell_state = trace_state[i * cols + j]
+          switch (cell_state) {
+            case WHITE_SIDE:
+              // log(`white ${cell_state} ${j} ${i}`)
+              temp = Piece(game.images["piece1"], cell_width, cell_height, WHITE_SIDE)
+              game.place(temp, [j, i])
+              game.draw(temp)
+              break;
+            case BLACK_SIDE:
+              // log(`white ${cell_state} ${j} ${i}`)
+              temp = Piece(game.images["piece2"], cell_width, cell_height, BLACK_SIDE)
+              game.place(temp, [j, i])
+              game.draw(temp)
+              break;
+            case BARRIER:
+              temp = Piece(game.images["barrier"], cell_width, cell_height, BARRIER)
+              game.place(temp, [j, i])
+              game.draw(temp)
+              break;
+          }
+        }
+      }
+    }
+
     // init the cells
     var curr_cell_x = 0
     var curr_cell_y = 0
@@ -173,22 +216,10 @@ var main = function() {
     game.move(black2, [0, Math.round(rows / 3)])
 
     game.render = function() {
-
       // draw the game board
       cells.forEach((item, i) => {
         game.draw(item)
       });
-
-      //draw the barriers
-      barriers.forEach((item, i) => {
-        game.draw(item)
-      });
-
-      //draw the pieces
-      game.draw(white1)
-      game.draw(white2)
-      game.draw(black1)
-      game.draw(black2)
 
       //draw the calibration
       for (var i = 0; i < cols; i++) {
@@ -200,6 +231,24 @@ var main = function() {
         context.font = "15px sans-serif";
         context.fillStyle = "#000000";
         context.fillText(i + 1, 3, cell_height * (i + 1) - 5);
+      }
+
+      //when tracing back, we draw the corresponding step
+      if (game.active_traceback) {
+        trace_state = activities[game.active_traceback.data("state")]
+        game.restore(trace_state)
+        return
+      } else {
+        //draw the barriers
+        barriers.forEach((item, i) => {
+          game.draw(item)
+        });
+
+        //draw the pieces
+        game.draw(white1)
+        game.draw(white2)
+        game.draw(black1)
+        game.draw(black2)
       }
 
       game.curr_side = barriers.length % 2
@@ -220,7 +269,11 @@ var main = function() {
     });
 
     game.updateInfo = function() {
-      // activities = activities.concat([states])
+      // dont update when tracing back
+      // if (game.active_traceback) {
+      //   return
+      // }
+      // backup latest states
       activities.push([...states])
       // log(activities)
       game.curr_side = barriers.length % 2
@@ -230,9 +283,6 @@ var main = function() {
 
       white = '<img src="imgs/piece1.png" height="60">'
       black = '<img src="imgs/piece2.png" height="60">'
-      start_lst = '<li class="list-group-item">'
-      white_lst = '<li class="list-group-item"><img src="imgs/piece1.png" height="30">'
-      black_lst = '<li class="list-group-item"><img src="imgs/piece2.png" height="30">'
 
       // update the info tab
       curr = ''
@@ -254,6 +304,9 @@ var main = function() {
       info.html(curr)
 
       //update activity history
+      start_lst = '<a href="#" class="list-group-item list-group-item-action" data-state="1">'
+      normal_lst = '<a href="#" class="list-group-item list-group-item-action"'
+
       // log(activities)
       if (activities.length == 2) {
         acts.html("")
@@ -265,11 +318,33 @@ var main = function() {
         <img src="imgs/barrier.png" height="30">
         (${String.fromCharCode(65+game.last_placed_barrier.board_x)},${game.last_placed_barrier.board_y+1})`
         if (game.curr_side == WHITE_SIDE) {
-          acts.append(`${black_lst}${activity}</li>`)
+          acts.append(`${normal_lst} data-state="${activities.length - 1}">
+          <img src="imgs/piece2.png" height="30">${activity}</a>`)
         } else {
-          acts.append(`${white_lst}${activity}</li>`)
+          acts.append(`${normal_lst} data-state="${activities.length - 1}">
+          <img src="imgs/piece1.png" height="30">${activity}</a>`)
         }
       }
+
+      //traceback function
+      $(".list-group a").off('click');
+      $(".list-group a").click(function() {
+        state_idx = $(this).data("state")
+        if (game.active_traceback) {
+          game.active_traceback.removeClass("active")
+          if (game.active_traceback.data("state") == state_idx) {
+            game.active_traceback = null
+            $("#trace").hide()
+            $("#info").show()
+            return
+          }
+        }
+        $("#trace").show()
+        $("#info").hide()
+        $(this).addClass("active")
+        game.active_traceback = $(this)
+        // log(state_idx)
+      })
     }
 
     game.enableDrag(white1, "plane", game.get_is_piece_movable, game.release_piece)
@@ -281,9 +356,12 @@ var main = function() {
     game.updateFPS();
     game.running();
   });
+
   main.restLevel = function() {
     game.end();
     $('#viewer').replaceWith($('#viewer').clone());
+    $("#info").show()
+    $("#trace").hide()
     main();
   }
   main.addSize = function() {
@@ -301,4 +379,5 @@ var main = function() {
     }
   }
 }
+$("#trace").hide()
 main();
