@@ -40,6 +40,7 @@ var main = function() {
     game.cursor_y = 0
     game.curr_side = 0
     game.is_placing_piece = true
+    game.last_moved_piece = null
 
     game.move = function(piece, location) {
       x = location[0]
@@ -62,16 +63,42 @@ var main = function() {
     }
 
     game.is_available_barrier_pos = function(x, y) {
-      if (game.getState(x, y) == EMPTY_CELL) {
+      dx = game.last_moved_piece.board_x - x
+      dy = game.last_moved_piece.board_y - y
+      thresh = dx * dx + dy * dy
+      if (game.getState(x, y) == EMPTY_CELL && thresh > 0 && thresh < 3) {
         return true
       }
       return false
     }
 
+    game.get_legal_moves = function(piece) {
+      var moves = new Set()
+      dx = [-1, -1, 0, 1, 1, 1, 0, -1]
+      dy = [0, 1, 1, 1, 0, -1, -1, -1]
+      for (var i = 0; i < dx.length; i++) {
+        nx = piece.board_x + dx[i]
+        ny = piece.board_y + dy[i]
+        while (nx < cols && ny < rows && nx >= 0 && ny >= 0 &&
+          game.getState(nx, ny) == EMPTY_CELL) {
+          moves.add(`${nx}#${ny}`)
+          nx += dx[i]
+          ny += dy[i]
+        }
+      }
+      return moves
+    }
+
     game.validate_move = function(piece, target_x, target_y) {
       // log(target_x + " " + target_y + " " + piece.board_x + " " + piece.board_y)
-      if (piece.board_x != target_x || piece.board_y != target_y) {
-        return true
+      curr_x = piece.board_x
+      curr_y = piece.board_y
+      if (curr_x != target_x || curr_y != target_y) {
+        legal_moves = game.get_legal_moves(piece)
+        log(legal_moves)
+        if (legal_moves.has(`${target_x}#${target_y}`)) {
+          return true
+        }
       }
       return false
     }
@@ -82,7 +109,10 @@ var main = function() {
       board_y = parseInt((piece.y + piece.height / 2) / cell_height)
       if (game.validate_move(piece, board_x, board_y)) {
         game.move(piece, [board_x, board_y])
+        game.last_moved_piece = piece
         game.is_placing_piece = false
+      } else {
+        game.move(piece, [piece.board_x, piece.board_y])
       }
     }
 
@@ -95,15 +125,17 @@ var main = function() {
 
     // use to put the barriers
     game.cell_click = function() {
-      log("current state = " + states[game.cursor_y * rows + game.cursor_x])
-      log(states)
-      if (game.is_placing_piece || states[game.cursor_y * rows + game.cursor_x] != EMPTY_CELL) {
+      // log("current state = " + states[game.cursor_y * rows + game.cursor_x])
+      // log(states)
+      if (game.is_placing_piece || !game.is_available_barrier_pos(game.cursor_x, game.cursor_y)) {
         return
       }
       new_barrier = Piece(game.images["barrier"], cell_width, cell_height, 2)
       game.move(new_barrier, [game.cursor_x, game.cursor_y])
       barriers.push(new_barrier)
       game.is_placing_piece = true
+      //update info panel
+      game.updateInfo()
     }
 
     // init the cells
@@ -166,17 +198,40 @@ var main = function() {
       // log(game.cursor_x + " " + game.cursor_y)
     });
 
+    game.updateInfo = function() {
+      game.curr_side = barriers.length % 2
+      info = $("#info")
+      white = '<img src="imgs/piece1.png" height="60">'
+      black = '<img src="imgs/piece2.png" height="60">'
+      curr = ''
+      if (game.curr_side == WHITE_SIDE) {
+        if (game.get_legal_moves(white1).size == 0 && game.get_legal_moves(white2).size == 0) {
+          //white lose
+          curr += `${black} win!`
+        } else {
+          curr += `${white}'s turn.`
+        }
+      } else {
+        if (game.get_legal_moves(black1).size == 0 && game.get_legal_moves(black2).size == 0) {
+          //black lose
+          curr += `${white} win!`
+        } else {
+          curr += `${black}'s turn. `
+        }
+      }
+      info.html(curr)
+    }
+
     game.enableDrag(white1, "plane", game.get_is_piece_movable, game.release_piece)
     game.enableDrag(white2, "plane", game.get_is_piece_movable, game.release_piece)
     game.enableDrag(black1, "plane", game.get_is_piece_movable, game.release_piece)
     game.enableDrag(black2, "plane", game.get_is_piece_movable, game.release_piece)
     //Start running
+    game.updateInfo();
     game.updateFPS();
     game.running();
   });
   main.restLevel = function() {
-    if (game.fps < 1)
-      game.updateFPS(120);
     game.end();
     main();
   }
