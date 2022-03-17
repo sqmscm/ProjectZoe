@@ -332,12 +332,14 @@ var main = function() {
         state_idx = $(this).data("state")
         if (game.active_traceback) {
           game.active_traceback.removeClass("active")
-          if (game.active_traceback.data("state") == state_idx) {
-            game.active_traceback = null
-            $("#trace").hide()
-            $("#info").show()
-            return
-          }
+        }
+        //terminate traceback
+        if ((game.active_traceback && game.active_traceback.data("state") == state_idx) ||
+          state_idx == activities.length - 1) {
+          game.active_traceback = null
+          $("#trace").hide()
+          $("#info").show()
+          return
         }
         $("#trace").show()
         $("#info").hide()
