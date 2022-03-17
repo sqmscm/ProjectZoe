@@ -12,6 +12,7 @@ window.rows = 4
 //main
 var main = function() {
   var canvas = document.getElementById('viewer');
+  var context = canvas.getContext('2d');
   var images = {
     barrier: "imgs/barrier.png",
     barrier2: "imgs/barrier_alpha.png",
@@ -35,6 +36,9 @@ var main = function() {
 
     var cells = []
     var barriers = []
+    var activities = [
+      []
+    ]
     var states = Array(rows * cols).fill(EMPTY_CELL)
 
     game.cursor_x = 0
@@ -42,6 +46,7 @@ var main = function() {
     game.curr_side = 0
     game.is_placing_piece = true
     game.last_moved_piece = null
+    game.last_placed_barrier = null
 
     game.move = function(piece, location) {
       x = location[0]
@@ -54,6 +59,8 @@ var main = function() {
       }
       piece.x = x * cell_width
       piece.y = y * cell_height
+      piece.prev_x = piece.board_x
+      piece.prev_y = piece.board_y
       piece.board_x = x
       piece.board_y = y
       // log(states)
@@ -134,6 +141,7 @@ var main = function() {
       game.move(new_barrier, [game.cursor_x, game.cursor_y])
       barriers.push(new_barrier)
       game.is_placing_piece = true
+      game.last_placed_barrier = new_barrier
       //update info panel
       game.updateInfo()
     }
@@ -182,6 +190,18 @@ var main = function() {
       game.draw(black1)
       game.draw(black2)
 
+      //draw the calibration
+      for (var i = 0; i < cols; i++) {
+        context.font = "15px sans-serif";
+        context.fillStyle = "#000000";
+        context.fillText(String.fromCharCode(65 + i), cell_width * (i + 1) - 15, 15);
+      }
+      for (var i = 0; i < rows; i++) {
+        context.font = "15px sans-serif";
+        context.fillStyle = "#000000";
+        context.fillText(i + 1, 3, cell_height * (i + 1) - 5);
+      }
+
       game.curr_side = barriers.length % 2
 
       if (!game.is_placing_piece && game.is_available_barrier_pos(game.cursor_x, game.cursor_y)) {
@@ -200,12 +220,21 @@ var main = function() {
     });
 
     game.updateInfo = function() {
-      // log(barriers)
+      // activities = activities.concat([states])
+      activities.push([...states])
+      // log(activities)
       game.curr_side = barriers.length % 2
       // log(barriers)
       info = $("#info")
+      acts = $("#acts")
+
       white = '<img src="imgs/piece1.png" height="60">'
       black = '<img src="imgs/piece2.png" height="60">'
+      start_lst = '<li class="list-group-item">'
+      white_lst = '<li class="list-group-item"><img src="imgs/piece1.png" height="30">'
+      black_lst = '<li class="list-group-item"><img src="imgs/piece2.png" height="30">'
+
+      // update the info tab
       curr = ''
       if (game.curr_side == WHITE_SIDE) {
         if (game.get_legal_moves(white1).size == 0 && game.get_legal_moves(white2).size == 0) {
@@ -223,6 +252,24 @@ var main = function() {
         }
       }
       info.html(curr)
+
+      //update activity history
+      // log(activities)
+      if (activities.length == 2) {
+        acts.html("")
+        acts.append(`${start_lst}Initial state: ${rows}x${cols}</li>`)
+      } else {
+        activity = `${activities.length - 2}.
+        (${String.fromCharCode(65 + game.last_moved_piece.prev_x)},${game.last_moved_piece.prev_y+1}) =>
+        (${String.fromCharCode(65 + game.last_moved_piece.board_x)},${game.last_moved_piece.board_y+1})
+        <img src="imgs/barrier.png" height="30">
+        (${String.fromCharCode(65+game.last_placed_barrier.board_x)},${game.last_placed_barrier.board_y+1})`
+        if (game.curr_side == WHITE_SIDE) {
+          acts.append(`${black_lst}${activity}</li>`)
+        } else {
+          acts.append(`${white_lst}${activity}</li>`)
+        }
+      }
     }
 
     game.enableDrag(white1, "plane", game.get_is_piece_movable, game.release_piece)

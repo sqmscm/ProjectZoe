@@ -13,6 +13,8 @@ var Piece = function(a, setWidth, setHeight, setSide) {
     height: setHeight,
     board_x: -1,
     board_y: -1,
+    prev_x: -1,
+    prev_y: -1,
     side: setSide,
   }
 
