@@ -191,10 +191,10 @@ var Game = function(images, runner) {
   }
 
   o.getMousePos = function(evt) {
-    var rect = canvas.getBoundingClientRect();
+    // log(evt)
     return {
-      x: evt.clientX - rect.left,
-      y: evt.clientY - rect.top
+      x: evt.offsetX,
+      y: evt.offsetY,
     };
   }
 

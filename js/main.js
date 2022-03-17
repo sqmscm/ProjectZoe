@@ -94,12 +94,10 @@ var main = function() {
       // log(target_x + " " + target_y + " " + piece.board_x + " " + piece.board_y)
       curr_x = piece.board_x
       curr_y = piece.board_y
-      if (curr_x != target_x || curr_y != target_y) {
-        legal_moves = game.get_legal_moves(piece)
-        log(legal_moves)
-        if (legal_moves.has(`${target_x}#${target_y}`)) {
-          return true
-        }
+      legal_moves = game.get_legal_moves(piece)
+      // log(legal_moves)
+      if (legal_moves.has(`${target_x}#${target_y}`)) {
+        return true
       }
       return false
     }
@@ -131,7 +129,8 @@ var main = function() {
       if (game.is_placing_piece || !game.is_available_barrier_pos(game.cursor_x, game.cursor_y)) {
         return
       }
-      new_barrier = Piece(game.images["barrier"], cell_width, cell_height, 2)
+      // log(`creating b at ${game.cursor_x} ${game.cursor_y}, last ${game.last_moved_piece.board_x} ${game.last_moved_piece.board_y}`)
+      new_barrier = Piece(game.images["barrier"], cell_width, cell_height, BARRIER)
       game.move(new_barrier, [game.cursor_x, game.cursor_y])
       barriers.push(new_barrier)
       game.is_placing_piece = true
@@ -194,13 +193,15 @@ var main = function() {
     // get mouse location on board
     canvas.addEventListener('mousemove', function(event) {
       var ret = game.getMousePos(event)
-      game.cursor_x = parseInt(ret['x'] / cell_width)
-      game.cursor_y = parseInt(ret['y'] / cell_height)
-      // log(game.cursor_x + " " + game.cursor_y)
+      game.cursor_x = parseInt(ret['x'] / (canvas.clientWidth / cols))
+      game.cursor_y = parseInt(ret['y'] / (canvas.clientHeight / rows))
+      // log(game.cursor_x + " " + game.cursor_y + canvas.offsetWidth)
+      // log(ret['x'] + " " + ret['y'])
     });
 
     game.updateInfo = function() {
       game.curr_side = barriers.length % 2
+      // log(barriers)
       info = $("#info")
       white = '<img src="imgs/piece1.png" height="60">'
       black = '<img src="imgs/piece2.png" height="60">'
