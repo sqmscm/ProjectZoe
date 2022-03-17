@@ -14,10 +14,10 @@ var main = function() {
   var canvas = document.getElementById('viewer');
   var context = canvas.getContext('2d');
   var images = {
-    barrier: "imgs/barrier.png",
-    barrier2: "imgs/barrier_alpha.png",
-    piece1: "imgs/piece1.png",
-    piece2: "imgs/piece2.png",
+    barrier: "static/imgs/barrier.png",
+    barrier2: "static/imgs/barrier_alpha.png",
+    piece1: "static/imgs/piece1.png",
+    piece2: "static/imgs/piece2.png",
   }
   var game = Game(images, function() {
 
@@ -269,20 +269,30 @@ var main = function() {
     });
 
     game.updateInfo = function() {
-      // dont update when tracing back
-      // if (game.active_traceback) {
-      //   return
-      // }
       // backup latest states
       activities.push([...states])
       // log(activities)
       game.curr_side = barriers.length % 2
+      $.ajax({
+        type: "POST",
+        url: "/api",
+        data: JSON.stringify({
+          state: states,
+          turn: game.curr_side
+        }),
+        contentType: "application/json",
+        dataType: 'json',
+        success: function(result) {
+          console.log(result)
+        }
+      });
+
       // log(barriers)
       info = $("#info")
       acts = $("#acts")
 
-      white = '<img src="imgs/piece1.png" height="60">'
-      black = '<img src="imgs/piece2.png" height="60">'
+      white = '<img src="static/imgs/piece1.png" height="60">'
+      black = '<img src="static/imgs/piece2.png" height="60">'
 
       // update the info tab
       curr = ''
@@ -315,14 +325,14 @@ var main = function() {
         activity = `${activities.length - 2}.
         (${String.fromCharCode(65 + game.last_moved_piece.prev_x)},${game.last_moved_piece.prev_y+1}) =>
         (${String.fromCharCode(65 + game.last_moved_piece.board_x)},${game.last_moved_piece.board_y+1})
-        <img src="imgs/barrier.png" height="30">
+        <img src="static/imgs/barrier.png" height="30">
         (${String.fromCharCode(65+game.last_placed_barrier.board_x)},${game.last_placed_barrier.board_y+1})`
         if (game.curr_side == WHITE_SIDE) {
           acts.append(`${normal_lst} data-state="${activities.length - 1}">
-          <img src="imgs/piece2.png" height="30">${activity}</a>`)
+          <img src="static/imgs/piece2.png" height="30">${activity}</a>`)
         } else {
           acts.append(`${normal_lst} data-state="${activities.length - 1}">
-          <img src="imgs/piece1.png" height="30">${activity}</a>`)
+          <img src="static/imgs/piece1.png" height="30">${activity}</a>`)
         }
       }
 
