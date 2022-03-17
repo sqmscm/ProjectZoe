@@ -7,6 +7,8 @@ const BLACK_SIDE = 1
 const BARRIER = 2
 const EMPTY_CELL = -2
 const BLUR_BARRIER = -1
+window.cols = 4
+window.rows = 4
 //main
 var main = function() {
   var canvas = document.getElementById('viewer');
@@ -18,8 +20,8 @@ var main = function() {
   }
   var game = Game(images, function() {
 
-    var rows = 4
-    var cols = 4
+    var rows = window.rows
+    var cols = window.cols
     var cell_width = parseInt(canvas.width / cols)
     var cell_height = parseInt(canvas.height / rows)
     var board_color_1 = "#779557"
@@ -116,7 +118,7 @@ var main = function() {
     }
 
     game.get_is_piece_movable = function(piece) {
-      if (piece.side == game.curr_side && game.is_placing_piece) {
+      if (piece.side == game.curr_side && game.is_placing_piece && game.get_legal_moves(piece).size > 0) {
         return true
       }
       return false
@@ -213,7 +215,7 @@ var main = function() {
       } else {
         if (game.get_legal_moves(black1).size == 0 && game.get_legal_moves(black2).size == 0) {
           //black lose
-          curr += `${white} win!`
+          curr += `${white} Wins!`
         } else {
           curr += `${black}'s turn. `
         }
@@ -233,6 +235,20 @@ var main = function() {
   main.restLevel = function() {
     game.end();
     main();
+  }
+  main.addSize = function() {
+    if (window.cols < 10 && window.rows < 10) {
+      window.cols += 1
+      window.rows += 1
+      main.restLevel()
+    }
+  }
+  main.mSize = function() {
+    if (window.cols > 3 && window.rows > 3) {
+      window.cols -= 1
+      window.rows -= 1
+      main.restLevel()
+    }
   }
 }
 main();

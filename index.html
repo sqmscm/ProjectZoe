@@ -25,10 +25,14 @@
         <div class="card">
           <div class="card-body">
             <h5>
-              <p><button id="rest" onclick="main.restLevel();" type="button" class="btn btn-primary">Restart</button></p>
+              <p>
+                <button id="rest" onclick="main.restLevel()" type="button" class="btn btn-primary">Restart</button>
+                <button id="rest" onclick="main.addSize()" type="button" class="btn btn-primary">+ Board Size</button>
+                <button id="rest" onclick="main.mSize()" type="button" class="btn btn-primary">- Board Size</button>
+              </p>
               <p>Drag to move a piece, then put a barrier near it.</p>
               <p id="info"></p>
-            </h4>
+              </h4>
           </div>
         </div>
       </div>
