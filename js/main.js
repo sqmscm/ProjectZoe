@@ -1,7 +1,6 @@
 /*
-JavaScript HitPlane
-Code: https://github.com/sqmscm/hitplane
-Demo: https://sqmscm.github.io/hitplane
+Project Zoe
+https://github.com/sqmscm/ProjectZoe
 */
 const WHITE_SIDE = 0
 const BLACK_SIDE = 1

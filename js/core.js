@@ -1,7 +1,6 @@
 /*
-JavaScript HitPlane
-Code: https://github.com/sqmscm/hitplane
-Demo: https://sqmscm.github.io/hitplane
+Project Zoe
+https://github.com/sqmscm/ProjectZoe
 */
 //Core functions
 var log = console.log.bind(console); //used to debug
