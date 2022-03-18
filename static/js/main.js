@@ -271,7 +271,7 @@ var main = function() {
     });
 
     game.make_moves_on_states = function(new_state, old_state) {
-      log(new_state)
+      // log(new_state)
       moving_piece = null
       move_to = null
       barrier_pos = null
@@ -313,13 +313,13 @@ var main = function() {
       game.is_placing_piece = true
       game.last_placed_barrier = new_barrier
       //update info panel
-      game.updateInfo()
+      game.updateInfo(true)
 
       // log([moving_piece, move_to, barrier_pos])
-      return [moving_piece, move_to, barrier_pos]
+      // return [moving_piece, move_to, barrier_pos]
     }
 
-    game.updateInfo = function() {
+    game.updateInfo = function(ai_opr = false) {
       // backup latest states
       activities.push([...states])
       // log(activities)
@@ -340,11 +340,17 @@ var main = function() {
             // log(result['cpu_move'])
             if (result['message'] == 'error') {
               game.AIsupport = false
+              $("#model_stat").attr("class", "btn btn-outline-info btn-sm")
+              $("#model_stat").text("Model not found.")
+
               return
             }
-            log(game.curr_side + " " + $('#ai-control input:radio:checked').val())
-            if (game.curr_side == $('#ai-control input:radio:checked').val()) {
-              game.make_moves_on_states(result['cpu_move'], states)
+            if (result['message'] == 'success') {
+              $("#model_stat").attr("class", "btn btn-outline-success btn-sm")
+              $("#model_stat").text("Model loaded.")
+              if (game.curr_side == $('#ai-control input:radio:checked').val()) {
+                game.make_moves_on_states(result['cpu_move'], states)
+              }
             }
             // console.log(result)
           }
@@ -391,6 +397,9 @@ var main = function() {
         (${String.fromCharCode(65 + game.last_moved_piece.board_x)},${game.last_moved_piece.board_y+1})
         <img src="static/imgs/barrier.png" height="30">
         (${String.fromCharCode(65+game.last_placed_barrier.board_x)},${game.last_placed_barrier.board_y+1})`
+        if (ai_opr) {
+          activity += ` <img src="static/imgs/ai.png" height="30">`
+        }
         if (game.curr_side == WHITE_SIDE) {
           acts.append(`${normal_lst} data-state="${activities.length - 1}">
           <img src="static/imgs/piece2.png" height="30">${activity}</a>`)

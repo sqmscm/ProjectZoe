@@ -24,25 +24,34 @@
       <div class="col-8">
         <div class="card">
           <div class="card-body">
+            <div class="btn-toolbar" role="toolbar">
+              <div class="btn-group me-2" role="group">
+                <button id="rest" onclick="main.restLevel()" type="button" class="btn btn-outline-danger btn-sm">Restart</button>
+              </div>
+              <div class="btn-group me-2" role="group">
+                <button id="rest" onclick="main.addSize()" type="button" class="btn btn-outline-primary btn-sm">+ Board Size</button>
+                <button id="rest" onclick="main.mSize()" type="button" class="btn btn-outline-primary btn-sm">- Board Size</button>
+              </div>
+              <div class="btn-group me-2" role="group" id="ai-control">
+                <button id="rest" type="button" class="btn btn-outline-secondary btn-sm" disabled>AI Control</button>
+                <input type="radio" class="btn-check" name="ai-control" id="ai-off" value="-1" checked>
+                <label class="btn btn-outline-primary btn-sm" for="ai-off">OFF</label>
+                <input type="radio" class="btn-check" name="ai-control" id="ai-white" value="0">
+                <label class="btn btn-outline-primary btn-sm" for="ai-white">Red</label>
+                <input type="radio" class="btn-check" name="ai-control" id="ai-black" value="1">
+                <label class="btn btn-outline-primary btn-sm" for="ai-black">Gold</label>
+              </div>
+              <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-info btn-sm" id="model_stat" disabled>Model not found.</button>
+              </div>
+            </div>
+            <br>
+            <p>Drag to move a crown, then put a poison near it.</p>
             <h5>
-              <p>
-                <button id="rest" onclick="main.restLevel()" type="button" class="btn btn-primary">Restart</button>
-                <button id="rest" onclick="main.addSize()" type="button" class="btn btn-primary">+ Board Size</button>
-                <button id="rest" onclick="main.mSize()" type="button" class="btn btn-primary">- Board Size</button>
-                <div class="btn-group" role="group" id="ai-control">
-                  <input type="radio" class="btn-check" name="ai-control" id="ai-off" value="-1" checked>
-                  <label class="btn btn-outline-primary" for="ai-off">OFF</label>
-                  <input type="radio" class="btn-check" name="ai-control" id="ai-white" value="0">
-                  <label class="btn btn-outline-primary" for="ai-white">White</label>
-                  <input type="radio" class="btn-check" name="ai-control" id="ai-black" value="1">
-                  <label class="btn btn-outline-primary" for="ai-black">Black</label>
-                </div>
-              </p>
-              <p>Drag to move a piece, then put a barrier near it.</p>
               <p id="info"></p>
               <p id="trace"><img src="static/imgs/rollback.png" height="60"> Tracing Back..</p>
-              <ul class="list-group" id="acts"></ul>
             </h5>
+            <ul class="list-group" id="acts"></ul>
           </div>
         </div>
       </div>
