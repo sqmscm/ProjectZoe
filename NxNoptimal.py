@@ -13,7 +13,7 @@ def comb(n, k):
     return a // math.factorial(k)
 
 
-r, c = 4, 4
+r, c = 3, 3
 
 side_combinations = comb(4, 2)
 position_combinations = comb(r * c, 4)

@@ -29,6 +29,14 @@
                 <button id="rest" onclick="main.restLevel()" type="button" class="btn btn-primary">Restart</button>
                 <button id="rest" onclick="main.addSize()" type="button" class="btn btn-primary">+ Board Size</button>
                 <button id="rest" onclick="main.mSize()" type="button" class="btn btn-primary">- Board Size</button>
+                <div class="btn-group" role="group" id="ai-control">
+                  <input type="radio" class="btn-check" name="ai-control" id="ai-off" value="-1" checked>
+                  <label class="btn btn-outline-primary" for="ai-off">OFF</label>
+                  <input type="radio" class="btn-check" name="ai-control" id="ai-white" value="0">
+                  <label class="btn btn-outline-primary" for="ai-white">White</label>
+                  <input type="radio" class="btn-check" name="ai-control" id="ai-black" value="1">
+                  <label class="btn btn-outline-primary" for="ai-black">Black</label>
+                </div>
               </p>
               <p>Drag to move a piece, then put a barrier near it.</p>
               <p id="info"></p>

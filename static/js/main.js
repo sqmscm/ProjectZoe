@@ -49,6 +49,8 @@ var main = function() {
     game.last_moved_piece = null
     game.last_placed_barrier = null
     game.latest_states = {}
+    game.AIsupport = true
+    game.AIside = WHITE_SIDE
 
     game.move = function(piece, location) {
       x = location[0]
@@ -268,24 +270,86 @@ var main = function() {
       // log(ret['x'] + " " + ret['y'])
     });
 
+    game.make_moves_on_states = function(new_state, old_state) {
+      log(new_state)
+      moving_piece = null
+      move_to = null
+      barrier_pos = null
+
+      new_state.forEach((item, i) => {
+        if (item != old_state[i]) {
+          x = parseInt(i % cols)
+          y = parseInt(i / rows)
+          if (item == WHITE_SIDE || item == BLACK_SIDE) {
+            move_to = [x, y]
+          }
+          if (old_state[i] == WHITE_SIDE) {
+            if (white1.board_x == x && white1.board_y == y) {
+              moving_piece = white1
+            } else {
+              moving_piece = white2
+            }
+          }
+          if (old_state[i] == BLACK_SIDE) {
+            if (black1.board_x == x && black1.board_y == y) {
+              moving_piece = black1
+            } else {
+              moving_piece = black2
+            }
+          }
+          if (item == BARRIER) {
+            barrier_pos = [x, y]
+          }
+        }
+      });
+
+      //move the piece
+      game.move(moving_piece, move_to)
+      game.last_moved_piece = moving_piece
+      // make the barrier
+      new_barrier = Piece(game.images["barrier"], cell_width, cell_height, BARRIER)
+      game.move(new_barrier, barrier_pos)
+      barriers.push(new_barrier)
+      game.is_placing_piece = true
+      game.last_placed_barrier = new_barrier
+      //update info panel
+      game.updateInfo()
+
+      // log([moving_piece, move_to, barrier_pos])
+      return [moving_piece, move_to, barrier_pos]
+    }
+
     game.updateInfo = function() {
       // backup latest states
       activities.push([...states])
       // log(activities)
       game.curr_side = barriers.length % 2
-      $.ajax({
-        type: "POST",
-        url: "/api",
-        data: JSON.stringify({
-          state: states,
-          turn: game.curr_side
-        }),
-        contentType: "application/json",
-        dataType: 'json',
-        success: function(result) {
-          console.log(result)
-        }
-      });
+      if (game.AIsupport) {
+        $.ajax({
+          type: "POST",
+          url: "/api",
+          data: JSON.stringify({
+            rows: rows,
+            cols: cols,
+            state: states,
+            turn: game.curr_side
+          }),
+          contentType: "application/json",
+          dataType: 'json',
+          success: function(result) {
+            // log(result['cpu_move'])
+            if (result['message'] == 'error') {
+              game.AIsupport = false
+              return
+            }
+            log(game.curr_side + " " + $('#ai-control input:radio:checked').val())
+            if (game.curr_side == $('#ai-control input:radio:checked').val()) {
+              game.make_moves_on_states(result['cpu_move'], states)
+            }
+            // console.log(result)
+          }
+        });
+      }
 
       // log(barriers)
       info = $("#info")
@@ -359,10 +423,10 @@ var main = function() {
       })
     }
 
-    game.enableDrag(white1, "plane", game.get_is_piece_movable, game.release_piece)
-    game.enableDrag(white2, "plane", game.get_is_piece_movable, game.release_piece)
-    game.enableDrag(black1, "plane", game.get_is_piece_movable, game.release_piece)
-    game.enableDrag(black2, "plane", game.get_is_piece_movable, game.release_piece)
+    game.enableDrag(white1, "plane", game.get_is_piece_movable, game.release_piece);
+    game.enableDrag(white2, "plane", game.get_is_piece_movable, game.release_piece);
+    game.enableDrag(black1, "plane", game.get_is_piece_movable, game.release_piece);
+    game.enableDrag(black2, "plane", game.get_is_piece_movable, game.release_piece);
     //Start running
     game.updateInfo();
     game.updateFPS();
