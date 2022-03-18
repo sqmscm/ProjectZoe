@@ -5,6 +5,8 @@ piece: -1: black, 0: space, 1: white, 2: obstacle
 import copy
 import math
 
+r, c = 3, 3
+
 
 def comb(n, k):
     a = 1
@@ -12,8 +14,6 @@ def comb(n, k):
         a *= i
     return a // math.factorial(k)
 
-
-r, c = 3, 3
 
 side_combinations = comb(4, 2)
 position_combinations = comb(r * c, 4)
@@ -432,9 +432,6 @@ def question(question_state2d):
         print("-------------------")
 
 
-# if __name__ == '__main__':
-# print(side_combinations, position_combinations, obstacles_combinations, total_state_num)
-
 piece_position_table, inv_piece_position_table = make_position_table(4, position_combinations, r * c)
 side_position_table, inv_side_position_table = make_position_table(2, side_combinations, 4)
 
@@ -449,9 +446,10 @@ def d2(num):
     print(state2d)
 
 
+dtw, par = load_from_disk()
+
 # write_to_disk(*optimal_strategy())
 # dtw, par = load_from_disk(file_name='NxNoptimal')
 # write_to_disk(*optimal_strategy(1, dtw, par))
-# dtw, par = load_from_disk()
 # display(config.init_chess_state, 0, dtw, par)
 # question(config.question_state)
