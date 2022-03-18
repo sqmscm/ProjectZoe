@@ -14,10 +14,10 @@ var main = function() {
   var canvas = document.getElementById('viewer');
   var context = canvas.getContext('2d');
   var images = {
-    barrier: "imgs/barrier.png",
-    barrier2: "imgs/barrier_alpha.png",
-    piece1: "imgs/piece1.png",
-    piece2: "imgs/piece2.png",
+    barrier: "static/imgs/barrier.png",
+    barrier2: "static/imgs/barrier_alpha.png",
+    piece1: "static/imgs/piece1.png",
+    piece2: "static/imgs/piece2.png",
   }
   var game = Game(images, function() {
 
@@ -49,6 +49,8 @@ var main = function() {
     game.last_moved_piece = null
     game.last_placed_barrier = null
     game.latest_states = {}
+    game.AIsupport = true
+    game.AIside = WHITE_SIDE
 
     game.move = function(piece, location) {
       x = location[0]
@@ -268,21 +270,99 @@ var main = function() {
       // log(ret['x'] + " " + ret['y'])
     });
 
-    game.updateInfo = function() {
-      // dont update when tracing back
-      // if (game.active_traceback) {
-      //   return
-      // }
+    game.make_moves_on_states = function(new_state, old_state) {
+      // log(new_state)
+      moving_piece = null
+      move_to = null
+      barrier_pos = null
+
+      new_state.forEach((item, i) => {
+        if (item != old_state[i]) {
+          x = parseInt(i % cols)
+          y = parseInt(i / rows)
+          if (item == WHITE_SIDE || item == BLACK_SIDE) {
+            move_to = [x, y]
+          }
+          if (old_state[i] == WHITE_SIDE) {
+            if (white1.board_x == x && white1.board_y == y) {
+              moving_piece = white1
+            } else {
+              moving_piece = white2
+            }
+          }
+          if (old_state[i] == BLACK_SIDE) {
+            if (black1.board_x == x && black1.board_y == y) {
+              moving_piece = black1
+            } else {
+              moving_piece = black2
+            }
+          }
+          if (item == BARRIER) {
+            barrier_pos = [x, y]
+          }
+        }
+      });
+
+      //move the piece
+      game.move(moving_piece, move_to)
+      game.last_moved_piece = moving_piece
+      // make the barrier
+      new_barrier = Piece(game.images["barrier"], cell_width, cell_height, BARRIER)
+      game.move(new_barrier, barrier_pos)
+      barriers.push(new_barrier)
+      game.is_placing_piece = true
+      game.last_placed_barrier = new_barrier
+      //update info panel
+      game.updateInfo(true)
+
+      // log([moving_piece, move_to, barrier_pos])
+      // return [moving_piece, move_to, barrier_pos]
+    }
+
+    game.updateInfo = function(ai_opr = false) {
       // backup latest states
       activities.push([...states])
       // log(activities)
       game.curr_side = barriers.length % 2
+      if (game.AIsupport) {
+        $.ajax({
+          type: "POST",
+          url: "/api",
+          data: JSON.stringify({
+            rows: rows,
+            cols: cols,
+            state: states,
+            turn: game.curr_side
+          }),
+          contentType: "application/json",
+          dataType: 'json',
+          success: function(result) {
+            // log(result['cpu_move'])
+            if (result['message'] == 'error') {
+              game.AIsupport = false
+              $("#model_stat").attr("class", "btn btn-outline-info btn-sm")
+              $("#model_stat").text("Model not found.")
+
+              return
+            }
+            if (result['message'] == 'success') {
+              $("#model_stat").attr("class", "btn btn-outline-success btn-sm")
+              $("#model_stat").text("Model loaded.")
+              if (game.curr_side == $('#ai-control input:radio:checked').val()) {
+                game.make_moves_on_states(result['cpu_move'], states)
+              }
+            }
+            // console.log(result)
+          }
+        });
+      }
+
       // log(barriers)
       info = $("#info")
       acts = $("#acts")
 
-      white = '<img src="imgs/piece1.png" height="60">'
-      black = '<img src="imgs/piece2.png" height="60">'
+      white = '<img src="static/imgs/piece1.png" height="60">'
+      black = '<img src="static/imgs/piece2.png" height="60">'
 
       // update the info tab
       curr = ''
@@ -315,14 +395,17 @@ var main = function() {
         activity = `${activities.length - 2}.
         (${String.fromCharCode(65 + game.last_moved_piece.prev_x)},${game.last_moved_piece.prev_y+1}) =>
         (${String.fromCharCode(65 + game.last_moved_piece.board_x)},${game.last_moved_piece.board_y+1})
-        <img src="imgs/barrier.png" height="30">
+        <img src="static/imgs/barrier.png" height="30">
         (${String.fromCharCode(65+game.last_placed_barrier.board_x)},${game.last_placed_barrier.board_y+1})`
+        if (ai_opr) {
+          activity += ` <img src="static/imgs/ai.png" height="30">`
+        }
         if (game.curr_side == WHITE_SIDE) {
           acts.append(`${normal_lst} data-state="${activities.length - 1}">
-          <img src="imgs/piece2.png" height="30">${activity}</a>`)
+          <img src="static/imgs/piece2.png" height="30">${activity}</a>`)
         } else {
           acts.append(`${normal_lst} data-state="${activities.length - 1}">
-          <img src="imgs/piece1.png" height="30">${activity}</a>`)
+          <img src="static/imgs/piece1.png" height="30">${activity}</a>`)
         }
       }
 
@@ -349,10 +432,10 @@ var main = function() {
       })
     }
 
-    game.enableDrag(white1, "plane", game.get_is_piece_movable, game.release_piece)
-    game.enableDrag(white2, "plane", game.get_is_piece_movable, game.release_piece)
-    game.enableDrag(black1, "plane", game.get_is_piece_movable, game.release_piece)
-    game.enableDrag(black2, "plane", game.get_is_piece_movable, game.release_piece)
+    game.enableDrag(white1, "plane", game.get_is_piece_movable, game.release_piece);
+    game.enableDrag(white2, "plane", game.get_is_piece_movable, game.release_piece);
+    game.enableDrag(black1, "plane", game.get_is_piece_movable, game.release_piece);
+    game.enableDrag(black2, "plane", game.get_is_piece_movable, game.release_piece);
     //Start running
     game.updateInfo();
     game.updateFPS();
