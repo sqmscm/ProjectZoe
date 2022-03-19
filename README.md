@@ -7,7 +7,7 @@ Utter respect to Zoe and Christina
 Install dependencies
 
 ```bash
-pip install -r /path/to/requirements.txt
+pip install -r requirements.txt
 ```
 
 Then run with
