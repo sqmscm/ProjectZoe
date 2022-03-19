@@ -39,10 +39,5 @@ def zoe_backend():
         {"message": "success", "state_num": allowed_rows_cols[(r, c)]['par'][state_num], "cpu_move": best_move})
 
 
-@app.route("/")
-def zoe_frontend():
-    return render_template("index.html")
-
-
 if __name__ == '__main__':
     app.run()
