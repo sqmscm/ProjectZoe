@@ -322,7 +322,7 @@ var main = function() {
     }
 
     game.ai_make_action = function() {
-      if (game.AIaction) {
+      if (game.AIaction && game.is_placing_piece) {
         moving_piece = game.AIaction[0]
         move_to = game.AIaction[1]
         barrier_pos = game.AIaction[2]
@@ -406,7 +406,8 @@ var main = function() {
         acts.append(`${start_lst}Initial state: ${rows}x${cols}</li>`)
       } else {
         activity = `${activities.length - 2}.
-        (${String.fromCharCode(65 + game.last_moved_piece.prev_x)},${game.last_moved_piece.prev_y+1}) =>
+        (${String.fromCharCode(65 + game.last_moved_piece.prev_x)},${game.last_moved_piece.prev_y+1})
+        <img src="static/imgs/arrow.png" height="30">
         (${String.fromCharCode(65 + game.last_moved_piece.board_x)},${game.last_moved_piece.board_y+1})
         <img src="static/imgs/barrier.png" height="30">
         (${String.fromCharCode(65+game.last_placed_barrier.board_x)},${game.last_placed_barrier.board_y+1})`

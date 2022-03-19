@@ -4,6 +4,7 @@ piece: -1: black, 0: space, 1: white, 2: obstacle
 """
 import math
 import config
+import numpy as np
 from collections import defaultdict
 
 
@@ -115,12 +116,8 @@ def state_to_num(state, turn, rows, cols, state_dim=2):
 
 
 def load_from_disk(rows, cols, file_name='NxNoptimal_bothsides_'):
-    f = open(f"model/{file_name}dtw_r{rows}_c{cols}.txt", 'r')
-    distance_to_win = list(map(int, f.read().split(',')))
-    f.close()
-    f = open(f"model/{file_name}par_r{rows}_c{cols}.txt", 'r')
-    parent = list(map(int, f.read().split(',')))
-    f.close()
+    distance_to_win = np.load(f"model/{file_name}dtw_r{rows}_c{cols}.npy").tolist()
+    parent = np.load(f"model/{file_name}par_r{rows}_c{cols}.npy").tolist()
     return distance_to_win, parent
 
 
