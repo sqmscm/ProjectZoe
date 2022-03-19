@@ -11,6 +11,11 @@
       width: 100%;
       height: auto;
     }
+
+    .scroll {
+      max-height: 50vh;
+      overflow-y: auto;
+    }
   </style>
 </head>
 
@@ -54,7 +59,7 @@
               <p id="info"></p>
               <p id="trace"><img src="static/imgs/rollback.png" height="60"> Tracing Back..</p>
             </h5>
-            <ul class="list-group" id="acts"></ul>
+            <ul class="list-group scroll" id="acts"></ul>
           </div>
         </div>
       </div>
