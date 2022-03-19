@@ -1,7 +1,9 @@
 from flask import Flask, render_template, request, jsonify
+from flask_cors import CORS
 from optimal_solver import allowed_rows_cols, state_to_num, num_to_state
 
 app = Flask(__name__)
+CORS(app)
 
 
 @app.route("/api", methods=['POST'])
