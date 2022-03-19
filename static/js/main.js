@@ -7,8 +7,8 @@ const BLACK_SIDE = 1
 const BARRIER = 2
 const EMPTY_CELL = -2
 const BLUR_BARRIER = -1
-window.cols = 4
-window.rows = 4
+window.cols = 3
+window.rows = 3
 //main
 var main = function() {
   var canvas = document.getElementById('viewer');
@@ -456,7 +456,7 @@ var main = function() {
 
       $.ajax({
         type: "POST",
-        url: "/api",
+        url: "https://zoe-chess.herokuapp.com/api",
         data: JSON.stringify({
           rows: rows,
           cols: cols,
