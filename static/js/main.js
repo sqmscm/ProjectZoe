@@ -27,6 +27,9 @@ var main = function() {
     var cell_height = parseInt(canvas.height / rows)
     var board_color_1 = "#779557"
     var board_color_2 = "#ececd0"
+    var board_color_3 = "#baca2b"
+    var board_color_4 = "#f5f768"
+    var board_color_5 = "#db9281"
 
     var white1 = Piece(game.images["piece1"], cell_width, cell_height, WHITE_SIDE)
     var white2 = Piece(game.images["piece1"], cell_width, cell_height, WHITE_SIDE)
@@ -35,8 +38,12 @@ var main = function() {
     var blur_barrier = Piece(game.images["barrier2"], cell_width, cell_height, BLUR_BARRIER)
 
     var cells = []
+    var cell_colors = {} // cells with specific color
     var barriers = []
     var activities = [
+      []
+    ]
+    var move_logs = [
       []
     ]
     var states = Array(rows * cols).fill(EMPTY_CELL)
@@ -212,6 +219,28 @@ var main = function() {
       curr_cell_x = 0
     }
 
+    game.highlight_move = function(move_log) {
+      function change(x, y) {
+        switch ((x + y) % 2) {
+          case 0:
+            return board_color_3
+          case 1:
+            return board_color_4
+        }
+      }
+      game.change_cell_color(move_log[0], move_log[1], change(move_log[0], move_log[1]))
+      game.change_cell_color(move_log[2], move_log[3], change(move_log[2], move_log[3]))
+      game.change_cell_color(move_log[4], move_log[5], board_color_5)
+    }
+
+    // change the color of a cell
+    game.change_cell_color = function(x, y, color) {
+      idx = y * rows + x
+      if (idx >= 0 && idx < cells.length) {
+        cell_colors[idx] = color
+      }
+    }
+
     // move pieces to initial places
     game.move(white1, [cols - 1, Math.round(2 * rows / 3 - 1)])
     game.move(white2, [Math.round(2 * cols / 3 - 1), rows - 1])
@@ -221,7 +250,14 @@ var main = function() {
     game.render = function() {
       // draw the game board
       cells.forEach((item, i) => {
-        game.draw(item)
+        if (cell_colors[i]) {
+          temp = item.color
+          item.color = cell_colors[i]
+          game.draw(item)
+          item.color = temp
+        } else {
+          game.draw(item)
+        }
       });
 
       //draw the calibration
@@ -238,7 +274,10 @@ var main = function() {
 
       //when tracing back, we draw the corresponding step
       if (game.active_traceback) {
-        trace_state = activities[game.active_traceback.data("state")]
+        state_idx = game.active_traceback.data("state")
+        trace_state = activities[state_idx]
+        move_log = move_logs[state_idx]
+        game.highlight_move(move_log)
         game.restore(trace_state)
         return
       } else {
@@ -252,6 +291,9 @@ var main = function() {
         game.draw(white2)
         game.draw(black1)
         game.draw(black2)
+
+        // informative color
+        // game.highlight_move(move_logs[move_logs.length - 1])
       }
 
       game.curr_side = barriers.length % 2
@@ -321,54 +363,128 @@ var main = function() {
       game.updateInfo(true)
     }
 
+    game.get_legal_bar_pos = function(x, y, px = -1, py = -1) {
+      dx = [-1, 0, 1, 1, 1, 0, -1, -1]
+      dy = [-1, -1, -1, 0, 1, 1, 1, 0]
+      bar_pos = [
+        []
+      ]
+      dx.forEach((item, i) => {
+        nx = x + item
+        ny = y + dy[i]
+        if (nx >= 0 && nx < cols && ny >= 0 && ny < rows) {
+          if (game.getState(nx, ny) == EMPTY_CELL ||
+            (nx == px && ny == py)) {
+            bar_pos.push([x + item, y + dy[i]])
+          }
+        }
+      });
+      bar_pos.shift()
+      return bar_pos
+    }
+
     game.ai_make_action = function() {
-      if (game.AIaction && game.is_placing_piece) {
-        moving_piece = game.AIaction[0]
-        move_to = game.AIaction[1]
-        barrier_pos = game.AIaction[2]
-        game.AIaction = null
-        game.make_moves_on_action(moving_piece, move_to, barrier_pos)
+      if (game.is_placing_piece) {
+        moving_piece = null
+        move_to = null
+        barrier_pos = null
+        if (game.AIaction) {
+          // if there is a model, use its decision
+          moving_piece = game.AIaction[0]
+          move_to = game.AIaction[1]
+          barrier_pos = game.AIaction[2]
+          game.AIaction = null
+          game.make_moves_on_action(moving_piece, move_to, barrier_pos)
+        } else if (!game.AIsupport) {
+          // when no model loaded, randomly pick one
+          legal = null
+          if (game.curr_side == WHITE_SIDE) {
+            whites = [white1, white2]
+            widx = Math.floor(Math.random() * whites.length)
+            legal = game.get_legal_moves(whites[widx])
+            if (legal.size > 0) {
+              moving_piece = whites[widx]
+            } else {
+              legal = game.get_legal_moves(whites[(widx + 1) % 2])
+              if (legal.size > 0) {
+                moving_piece = whites[(widx + 1) % 2]
+              } else {
+                return // no available move
+              }
+            }
+          } else {
+            blacks = [black1, black2]
+            widx = Math.floor(Math.random() * blacks.length)
+            legal = game.get_legal_moves(blacks[widx])
+            if (legal.size > 0) {
+              moving_piece = blacks[widx]
+            } else {
+              legal = game.get_legal_moves(blacks[(widx + 1) % 2])
+              if (legal.size > 0) {
+                moving_piece = blacks[(widx + 1) % 2]
+              } else {
+                return // no available move
+              }
+            }
+          }
+          legal = [...legal]
+          move_to = legal[Math.floor(Math.random() * legal.length)].split("#").map(Number)
+          // log(move_to)
+          legal_bars = game.get_legal_bar_pos(move_to[0], move_to[1], moving_piece.board_x, moving_piece.board_y)
+          // log(legal_bars)
+          barrier_pos = legal_bars[Math.floor(Math.random() * legal_bars.length)]
+          game.make_moves_on_action(moving_piece, move_to, barrier_pos)
+        }
       }
     }
 
     game.updateInfo = function(ai_opr = false) {
+      // reset all board cells' color
+      cell_colors = {}
       // backup latest states
       activities.push([...states])
+      if (game.last_moved_piece && game.last_placed_barrier) {
+        move_logs.push([game.last_moved_piece.prev_x, game.last_moved_piece.prev_y,
+          game.last_moved_piece.board_x, game.last_moved_piece.board_y,
+          game.last_placed_barrier.board_x, game.last_placed_barrier.board_y
+        ])
+      } else {
+        move_logs.push([-1, -1, -1, -1, -1, -1])
+      }
       // log(activities)
       game.curr_side = barriers.length % 2
-      if (game.AIsupport) {
-        $.ajax({
-          type: "POST",
-          url: "/api",
-          data: JSON.stringify({
-            rows: rows,
-            cols: cols,
-            state: states,
-            turn: game.curr_side
-          }),
-          contentType: "application/json",
-          dataType: 'json',
-          success: function(result) {
-            // log(result['cpu_move'])
-            if (result['message'] == 'error') {
-              game.AIsupport = false
-              $("#model_stat").attr("class", "btn btn-outline-info btn-sm")
-              $("#model_stat").text("Model not found.")
 
-              return
-            }
-            if (result['message'] == 'success') {
-              $("#model_stat").attr("class", "btn btn-outline-success btn-sm")
-              $("#model_stat").text("Model loaded.")
-              game.AIaction = game.get_action_from_states(result['cpu_move'], states)
-              if (game.curr_side == $('#ai-control input:radio:checked').val()) {
-                game.ai_make_action()
-              }
-            }
-            // console.log(result)
-          }
-        });
-      }
+      $.ajax({
+        type: "POST",
+        url: "/api",
+        data: JSON.stringify({
+          rows: rows,
+          cols: cols,
+          state: states,
+          turn: game.curr_side
+        }),
+        contentType: "application/json",
+        dataType: 'json'
+      }).fail(function(data) {
+        game.AIsupport = false
+      }).done(function(result) {
+        // log(result['cpu_move'])
+        if (result['message'] == 'error') {
+          game.AIsupport = false
+          $("#model_stat").attr("class", "btn btn-outline-info btn-sm")
+          $("#model_stat").text("Model not found.")
+        } else if (result['message'] == 'success') {
+          $("#model_stat").attr("class", "btn btn-outline-success btn-sm")
+          $("#model_stat").text("Model loaded.")
+          game.AIaction = game.get_action_from_states(result['cpu_move'], states)
+          // log(result)
+        }
+        if (game.curr_side == $('#ai-control input:radio:checked').val()) {
+          game.ai_make_action()
+        }
+        // console.log(result)
+      });
+
 
       // log(barriers)
       info = $("#info")
@@ -403,7 +519,7 @@ var main = function() {
       // log(activities)
       if (activities.length == 2) {
         acts.html("")
-        acts.append(`${start_lst}Initial state: ${rows}x${cols}</li>`)
+        acts.prepend(`${start_lst}Initial state: ${rows}x${cols}</li>`)
       } else {
         activity = `${activities.length - 2}.
         (${String.fromCharCode(65 + game.last_moved_piece.prev_x)},${game.last_moved_piece.prev_y+1})
@@ -415,10 +531,10 @@ var main = function() {
           activity += ` <img src="static/imgs/ai.png" height="30">`
         }
         if (game.curr_side == WHITE_SIDE) {
-          acts.append(`${normal_lst} data-state="${activities.length - 1}">
+          acts.prepend(`${normal_lst} data-state="${activities.length - 1}">
           <img src="static/imgs/piece2.png" height="30">${activity}</a>`)
         } else {
-          acts.append(`${normal_lst} data-state="${activities.length - 1}">
+          acts.prepend(`${normal_lst} data-state="${activities.length - 1}">
           <img src="static/imgs/piece1.png" height="30">${activity}</a>`)
         }
       }
@@ -426,6 +542,7 @@ var main = function() {
       //traceback function
       $(".list-group a").off('click');
       $(".list-group a").click(function() {
+        cell_colors = {}
         state_idx = $(this).data("state")
         if (game.active_traceback) {
           game.active_traceback.removeClass("active")
