@@ -322,7 +322,7 @@ var main = function() {
     }
 
     game.ai_make_action = function() {
-      if (game.AIaction) {
+      if (game.AIaction && game.is_placing_piece) {
         moving_piece = game.AIaction[0]
         move_to = game.AIaction[1]
         barrier_pos = game.AIaction[2]
@@ -339,7 +339,7 @@ var main = function() {
       if (game.AIsupport) {
         $.ajax({
           type: "POST",
-          url: "/api",
+          url: "https://zoe-chess.herokuapp.com/api",
           data: JSON.stringify({
             rows: rows,
             cols: cols,
