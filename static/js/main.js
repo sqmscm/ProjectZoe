@@ -7,8 +7,8 @@ const BLACK_SIDE = 1
 const BARRIER = 2
 const EMPTY_CELL = -2
 const BLUR_BARRIER = -1
-window.cols = 3
-window.rows = 3
+window.cols = 4
+window.rows = 4
 //main
 var main = function() {
   var canvas = document.getElementById('viewer');
@@ -51,6 +51,7 @@ var main = function() {
     game.latest_states = {}
     game.AIsupport = true
     game.AIside = WHITE_SIDE
+    game.AIaction = null
 
     game.move = function(piece, location) {
       x = location[0]
@@ -270,7 +271,7 @@ var main = function() {
       // log(ret['x'] + " " + ret['y'])
     });
 
-    game.make_moves_on_states = function(new_state, old_state) {
+    game.get_action_from_states = function(new_state, old_state) {
       // log(new_state)
       moving_piece = null
       move_to = null
@@ -303,6 +304,10 @@ var main = function() {
         }
       });
 
+      return [moving_piece, move_to, barrier_pos]
+    }
+
+    game.make_moves_on_action = function(moving_piece, move_to, barrier_pos) {
       //move the piece
       game.move(moving_piece, move_to)
       game.last_moved_piece = moving_piece
@@ -314,9 +319,16 @@ var main = function() {
       game.last_placed_barrier = new_barrier
       //update info panel
       game.updateInfo(true)
+    }
 
-      // log([moving_piece, move_to, barrier_pos])
-      // return [moving_piece, move_to, barrier_pos]
+    game.ai_make_action = function() {
+      if (game.AIaction) {
+        moving_piece = game.AIaction[0]
+        move_to = game.AIaction[1]
+        barrier_pos = game.AIaction[2]
+        game.AIaction = null
+        game.make_moves_on_action(moving_piece, move_to, barrier_pos)
+      }
     }
 
     game.updateInfo = function(ai_opr = false) {
@@ -327,7 +339,7 @@ var main = function() {
       if (game.AIsupport) {
         $.ajax({
           type: "POST",
-          url: "https://zoe-chess.herokuapp.com/api",
+          url: "/api",
           data: JSON.stringify({
             rows: rows,
             cols: cols,
@@ -348,8 +360,9 @@ var main = function() {
             if (result['message'] == 'success') {
               $("#model_stat").attr("class", "btn btn-outline-success btn-sm")
               $("#model_stat").text("Model loaded.")
+              game.AIaction = game.get_action_from_states(result['cpu_move'], states)
               if (game.curr_side == $('#ai-control input:radio:checked').val()) {
-                game.make_moves_on_states(result['cpu_move'], states)
+                game.ai_make_action()
               }
             }
             // console.log(result)
@@ -393,7 +406,8 @@ var main = function() {
         acts.append(`${start_lst}Initial state: ${rows}x${cols}</li>`)
       } else {
         activity = `${activities.length - 2}.
-        (${String.fromCharCode(65 + game.last_moved_piece.prev_x)},${game.last_moved_piece.prev_y+1}) =>
+        (${String.fromCharCode(65 + game.last_moved_piece.prev_x)},${game.last_moved_piece.prev_y+1})
+        <img src="static/imgs/arrow.png" height="30">
         (${String.fromCharCode(65 + game.last_moved_piece.board_x)},${game.last_moved_piece.board_y+1})
         <img src="static/imgs/barrier.png" height="30">
         (${String.fromCharCode(65+game.last_placed_barrier.board_x)},${game.last_placed_barrier.board_y+1})`
@@ -442,6 +456,9 @@ var main = function() {
     game.running();
   });
 
+  main.aiMove = function() {
+    game.ai_make_action()
+  }
   main.restLevel = function() {
     game.end();
     $('#viewer').replaceWith($('#viewer').clone());
