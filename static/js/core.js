@@ -16,6 +16,8 @@ var Game = function(images, runner) {
     load: true,
   }
   var canvas = document.getElementById('viewer');
+  var zoom_x = canvas.width / canvas.offsetWidth
+  var zoom_y = canvas.height / canvas.offsetHeight
   var context = canvas.getContext('2d');
   //异步加载图片，全部加载完后才会运行！
   var loads = [];
@@ -133,7 +135,7 @@ var Game = function(images, runner) {
     canvas.addEventListener('mousedown', function(event) {
       if (!o.mouseControl || !dragable_callback(element))
         return;
-      if (o.isInside(element, event.offsetX, event.offsetY)) {
+      if (o.isInside(element, event.offsetX * zoom_x, event.offsetY * zoom_y)) {
         ofx = event.offsetX - element.x;
         ofy = event.offsetY - element.y;
         element.selected = true;
@@ -171,7 +173,7 @@ var Game = function(images, runner) {
   //Enable click
   o.enableClick = function(element, movement) {
     canvas.addEventListener('click', function(event) {
-      if (o.isInside(element, event.offsetX, event.offsetY))
+      if (o.isInside(element, event.offsetX * zoom_x, event.offsetY * zoom_y))
         movement();
     });
   }
