@@ -471,7 +471,7 @@ var main = function() {
         // log(result['cpu_move'])
         if (result['message'] == 'error') {
           game.AIsupport = false
-          $("#model_stat").attr("class", "btn btn-outline-info btn-sm")
+          $("#model_stat").attr("class", "btn btn-outline-danger btn-sm")
           $("#model_stat").text("Model not found.")
         } else if (result['message'] == 'success') {
           $("#model_stat").attr("class", "btn btn-outline-success btn-sm")
@@ -513,8 +513,8 @@ var main = function() {
       info.html(curr)
 
       //update activity history
-      start_lst = '<a href="#" class="list-group-item list-group-item-action" data-state="1">'
-      normal_lst = '<a href="#" class="list-group-item list-group-item-action"'
+      start_lst = '<a href="#" class="list-group-item list-group-item-secondary list-group-item-action" data-state="1">'
+      normal_lst = '<a href="#" class="list-group-item list-group-item-secondary list-group-item-action"'
 
       // log(activities)
       if (activities.length == 2) {
