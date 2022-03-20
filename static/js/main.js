@@ -21,6 +21,7 @@ var main = function() {
   }
   var game = Game(images, function() {
 
+    var winner = null
     var rows = window.rows
     var cols = window.cols
     var cell_width = parseInt(canvas.width / cols)
@@ -384,7 +385,7 @@ var main = function() {
     }
 
     game.ai_make_action = function() {
-      if (game.is_placing_piece) {
+      if (game.is_placing_piece && winner == null) {
         moving_piece = null
         move_to = null
         barrier_pos = null
@@ -499,6 +500,7 @@ var main = function() {
         if (game.get_legal_moves(white1).size == 0 && game.get_legal_moves(white2).size == 0) {
           //white lose
           curr += `${black} Wins!`
+          winner = BLACK_SIDE
         } else {
           curr += `${white}'s turn.`
         }
@@ -506,6 +508,7 @@ var main = function() {
         if (game.get_legal_moves(black1).size == 0 && game.get_legal_moves(black2).size == 0) {
           //black lose
           curr += `${white} Wins!`
+          winner = WHITE_SIDE
         } else {
           curr += `${black}'s turn. `
         }
