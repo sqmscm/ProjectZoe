@@ -302,6 +302,9 @@ var main = function() {
       if (!game.is_placing_piece && game.is_available_barrier_pos(game.cursor_x, game.cursor_y)) {
         game.move(blur_barrier, [game.cursor_x, game.cursor_y])
         game.draw(blur_barrier)
+        canvas.style.cursor = "pointer"
+      } else if (!game.is_placing_piece) {
+        canvas.style.cursor = "auto"
       }
     }
 
@@ -310,6 +313,17 @@ var main = function() {
       var ret = game.getMousePos(event)
       game.cursor_x = parseInt(ret['x'] / (canvas.clientWidth / cols))
       game.cursor_y = parseInt(ret['y'] / (canvas.clientHeight / rows))
+      state_num = states[game.cursor_y * rows + game.cursor_x]
+      // log(game.draging)
+      if ((game.draging || state_num == game.curr_side) && game.is_placing_piece) {
+        if (game.draging) {
+          canvas.style.cursor = "grabbing";
+        } else {
+          canvas.style.cursor = "grab";
+        }
+      } else if (game.is_placing_piece) {
+        canvas.style.cursor = "auto";
+      }
       // log(game.cursor_x + " " + game.cursor_y + " ")
       // log(ret['x'] + " " + ret['y'])
     });
