@@ -14,6 +14,7 @@ var Game = function(images, runner) {
     mouseControl: true,
     keyboardControl: true,
     load: true,
+    cursorChanger: {},
   }
   var canvas = document.getElementById('viewer');
   var zoom_x = canvas.width / canvas.offsetWidth
@@ -139,7 +140,11 @@ var Game = function(images, runner) {
         ofx = event.offsetX * zoom_x - element.x;
         ofy = event.offsetY * zoom_y - element.y;
         element.selected = true;
-      } else element.selected = false;
+        o.draging = true;
+      } else {
+        element.selected = false
+        // o.draging = false
+      };
     });
     canvas.addEventListener('mousemove', function(event) {
       if (!o.mouseControl || !dragable_callback(element))
@@ -167,6 +172,7 @@ var Game = function(images, runner) {
       if (!o.mouseControl || !dragable_callback(element))
         return;
       element.selected = false;
+      o.draging = false
       release_callback(element)
     });
   }
@@ -176,6 +182,24 @@ var Game = function(images, runner) {
       if (o.isInside(element, event.offsetX * zoom_x, event.offsetY * zoom_y))
         movement();
     });
+  }
+  //change cursor
+  o.enableChangeCursor = function(element, style) {
+    function changeCursor(event) {
+      if (o.isInside(element, event.offsetX * zoom_x, event.offsetY * zoom_y)) {
+        canvas.style.cursor = style;
+      } else {
+        canvas.style.cursor = "auto";
+      }
+    }
+    canvas.addEventListener('mousemove', changeCursor);
+    element.cursorId = Math.floor(Math.random * 1000000).toString();
+    o.cursorChanger[element.cursorId] = changeCursor;
+  }
+  //Disable change cursor
+  o.disableChangeCursor = function(element) {
+    canvas.style.cursor = "auto";
+    canvas.removeEventListener('mousemove', o.cursorChanger[element.cursorId]);
   }
   //Check if a point is inside an element
   o.isInside = function(element, offsetX, offsetY) {
