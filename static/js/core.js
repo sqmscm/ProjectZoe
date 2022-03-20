@@ -130,7 +130,7 @@ var Game = function(images, runner) {
     context.font = "10px Courier";
     context.strokeText("Score: " + window.score, 5, canvas.height - 5);
   }
-  //Enable drug
+  //Enable drag
   o.enableDrag = function(element, mode, dragable_callback, release_callback) {
     var ofx, ofy;
     canvas.addEventListener('mousedown', function(event) {
