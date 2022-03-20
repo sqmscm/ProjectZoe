@@ -136,8 +136,8 @@ var Game = function(images, runner) {
       if (!o.mouseControl || !dragable_callback(element))
         return;
       if (o.isInside(element, event.offsetX * zoom_x, event.offsetY * zoom_y)) {
-        ofx = event.offsetX - element.x;
-        ofy = event.offsetY - element.y;
+        ofx = event.offsetX * zoom_x - element.x;
+        ofy = event.offsetY * zoom_y - element.y;
         element.selected = true;
       } else element.selected = false;
     });
@@ -150,13 +150,13 @@ var Game = function(images, runner) {
       }
       if (element.selected) {
         if ((mode == "horizon" || mode == "plane") &&
-          event.offsetX - ofx <= canvas.width - element.width &&
-          event.offsetX - ofx >= 0)
-          element.x = event.offsetX - ofx;
+          event.offsetX * zoom_x - ofx <= canvas.width - element.width &&
+          event.offsetX * zoom_x - ofx >= 0)
+          element.x = event.offsetX * zoom_x - ofx;
         if ((mode == "vertical" || mode == "plane") &&
-          event.offsetY - ofy <= canvas.height - element.height &&
-          event.offsetY - ofy >= 0)
-          element.y = event.offsetY - ofy;
+          event.offsetY * zoom_y - ofy <= canvas.height - element.height &&
+          event.offsetY * zoom_y - ofy >= 0)
+          element.y = event.offsetY * zoom_y - ofy;
         if (o.fps < 1) {
           canvas.height = canvas.height;
           o.render();
