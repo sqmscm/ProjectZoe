@@ -103,7 +103,7 @@ var main = function() {
       return false
     }
 
-    game.get_legal_moves = function(piece) {
+    game.get_legal_moves = function(piece, bar_x = -1, bar_y = -1) {
       var moves = new Set()
       dx = [-1, -1, 0, 1, 1, 1, 0, -1]
       dy = [0, 1, 1, 1, 0, -1, -1, -1]
@@ -111,13 +111,20 @@ var main = function() {
         nx = piece.board_x + dx[i]
         ny = piece.board_y + dy[i]
         while (nx < cols && ny < rows && nx >= 0 && ny >= 0 &&
-          game.getState(nx, ny) == EMPTY_CELL) {
+          game.getState(nx, ny) == EMPTY_CELL && nx != bar_x && ny != bar_y) {
           moves.add(`${nx}#${ny}`)
           nx += dx[i]
           ny += dy[i]
         }
       }
       return moves
+    }
+
+    game.estimate_move = function(x, y, bar_x = -1, bar_y = -1) {
+      temp = Piece(null, 0, 0, BLUR_BARRIER)
+      temp.board_x = x
+      temp.board_y = y
+      return game.get_legal_moves(temp, bar_x, bar_y).size
     }
 
     game.validate_move = function(piece, target_x, target_y) {
@@ -146,7 +153,7 @@ var main = function() {
     }
 
     game.get_is_piece_movable = function(piece) {
-      if (piece.side == game.curr_side && game.is_placing_piece && game.get_legal_moves(piece).size > 0) {
+      if (piece.side == game.curr_side && !game.active_traceback && game.is_placing_piece && game.get_legal_moves(piece).size > 0) {
         return true
       }
       return false
@@ -313,6 +320,9 @@ var main = function() {
       var ret = game.getMousePos(event)
       game.cursor_x = parseInt(ret['x'] / (canvas.clientWidth / cols))
       game.cursor_y = parseInt(ret['y'] / (canvas.clientHeight / rows))
+      if (game.active_traceback) {
+        return
+      }
       state_num = states[game.cursor_y * rows + game.cursor_x]
       // log(game.draging)
       if ((game.draging || state_num == game.curr_side) && game.is_placing_piece) {
@@ -412,41 +422,57 @@ var main = function() {
           game.make_moves_on_action(moving_piece, move_to, barrier_pos)
         } else if (!game.AIsupport) {
           // when no model loaded, randomly pick one
-          legal = null
+          tmp = []
           if (game.curr_side == WHITE_SIDE) {
-            whites = [white1, white2]
-            widx = Math.floor(Math.random() * whites.length)
-            legal = game.get_legal_moves(whites[widx])
-            if (legal.size > 0) {
-              moving_piece = whites[widx]
-            } else {
-              legal = game.get_legal_moves(whites[(widx + 1) % 2])
-              if (legal.size > 0) {
-                moving_piece = whites[(widx + 1) % 2]
-              } else {
-                return // no available move
-              }
-            }
+            game.get_legal_moves(white1).forEach((item, i) => {
+              tmp.push([white1, item.split("#").map(Number)])
+            });
+            game.get_legal_moves(white2).forEach((item, i) => {
+              tmp.push([white2, item.split("#").map(Number)])
+            });
           } else {
-            blacks = [black1, black2]
-            widx = Math.floor(Math.random() * blacks.length)
-            legal = game.get_legal_moves(blacks[widx])
-            if (legal.size > 0) {
-              moving_piece = blacks[widx]
-            } else {
-              legal = game.get_legal_moves(blacks[(widx + 1) % 2])
-              if (legal.size > 0) {
-                moving_piece = blacks[(widx + 1) % 2]
-              } else {
-                return // no available move
-              }
-            }
+            game.get_legal_moves(black1).forEach((item, i) => {
+              tmp.push([black1, item.split("#").map(Number)])
+            });
+            game.get_legal_moves(black2).forEach((item, i) => {
+              tmp.push([black2, item.split("#").map(Number)])
+            });
           }
-          legal = [...legal]
-          move_to = legal[Math.floor(Math.random() * legal.length)].split("#").map(Number)
-          // log(move_to)
-          legal_bars = game.get_legal_bar_pos(move_to[0], move_to[1], moving_piece.board_x, moving_piece.board_y)
-          // log(legal_bars)
+          if (tmp.length == 0) {
+            return
+          }
+
+          //estimate a good position to go
+          legal = []
+          hi = -1
+          tmp.forEach((item, i) => {
+            loc = item[1]
+            est = game.estimate_move(loc[0], loc[1])
+            if (est > hi) {
+              legal = [item]
+              hi = est
+            } else if (est == hi) {
+              legal.push(item)
+            }
+          });
+          select = legal[Math.floor(Math.random() * legal.length)]
+          moving_piece = select[0]
+          move_to = select[1]
+
+          // estimate a good barrier position
+          tmp = game.get_legal_bar_pos(move_to[0], move_to[1], moving_piece.board_x, moving_piece.board_y)
+          legal_bars = null
+          hi = -1
+          tmp.forEach((loc, i) => {
+            est = game.estimate_move(move_to[0], move_to[1], loc[0], loc[1])
+            if (est > hi) {
+              legal_bars = [loc]
+              hi = est
+            } else if (est == hi) {
+              legal_bars.push(loc)
+            }
+          });
+
           barrier_pos = legal_bars[Math.floor(Math.random() * legal_bars.length)]
           game.make_moves_on_action(moving_piece, move_to, barrier_pos)
         }
@@ -559,6 +585,9 @@ var main = function() {
       //traceback function
       $(".list-group a").off('click');
       $(".list-group a").click(function() {
+        if (!game.is_placing_piece) {
+          return
+        }
         cell_colors = {}
         state_idx = $(this).data("state")
         if (game.active_traceback) {
