@@ -121,10 +121,26 @@ var main = function() {
     }
 
     game.estimate_move = function(x, y, bar_x = -1, bar_y = -1) {
-      temp = Piece(null, 0, 0, BLUR_BARRIER)
-      temp.board_x = x
-      temp.board_y = y
-      return game.get_legal_moves(temp, bar_x, bar_y).size
+      // strategy 1
+      // temp = Piece(null, 0, 0, BLUR_BARRIER)
+      // temp.board_x = x
+      // temp.board_y = y
+      // return game.get_legal_moves(temp, bar_x, bar_y).size
+      // strategy 2
+      target = null
+      if (game.curr_side == WHITE_SIDE) {
+        target = [black1, black2]
+      } else {
+        target = [white1, white2]
+      }
+      ret = 0
+      target.forEach((p, i) => {
+        ret += game.get_legal_moves(p, x, y).size
+        if (bar_x > -1) {
+          ret += game.get_legal_moves(p, bar_x, bar_y).size
+        }
+      });
+      return -ret
     }
 
     game.validate_move = function(piece, target_x, target_y) {
@@ -441,10 +457,9 @@ var main = function() {
           if (tmp.length == 0) {
             return
           }
-
           //estimate a good position to go
           legal = []
-          hi = -1
+          hi = Number.NEGATIVE_INFINITY
           tmp.forEach((item, i) => {
             loc = item[1]
             est = game.estimate_move(loc[0], loc[1])
@@ -462,7 +477,7 @@ var main = function() {
           // estimate a good barrier position
           tmp = game.get_legal_bar_pos(move_to[0], move_to[1], moving_piece.board_x, moving_piece.board_y)
           legal_bars = null
-          hi = -1
+          hi = Number.NEGATIVE_INFINITY
           tmp.forEach((loc, i) => {
             est = game.estimate_move(move_to[0], move_to[1], loc[0], loc[1])
             if (est > hi) {
